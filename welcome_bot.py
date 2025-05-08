@@ -61,3 +61,5 @@ async def on_member_join(member):
 
     file = discord.File(fp=buffer, filename="welcome.png")
     await channel.send(f"Welcome {member.mention} to **TN Clan Master**!", file=file)
+
+client.run(TOKEN)
