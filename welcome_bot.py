@@ -1,18 +1,30 @@
+from flask import Flask
+from threading import Thread
 import discord
 from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
 import requests
 from io import BytesIO
 import os
-from dotenv import load_dotenv
 
-# Load .env variables
-load_dotenv()
+# Dummy Flask web server for Render
+app = Flask(__name__)
+@app.route('/')
+def home():
+    return "Bot is running!"
+
+def run_web():
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
+
+Thread(target=run_web).start()
+
+# Load environment variables
 TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
 
 if not TOKEN or not CHANNEL_ID:
-    raise ValueError("DISCORD_TOKEN or CHANNEL_ID not found. Check your .env file.")
+    raise ValueError("DISCORD_TOKEN or CHANNEL_ID not found. Add them in Render's environment variables.")
 
 CHANNEL_ID = int(CHANNEL_ID)
 
@@ -31,12 +43,10 @@ async def on_member_join(member):
         print("Channel not found!")
         return
 
-    # Get avatar image
     avatar_url = member.avatar.url if member.avatar else member.default_avatar.url
     response = requests.get(avatar_url)
     avatar = Image.open(BytesIO(response.content)).resize((128, 128))
 
-    # Create welcome image
     base = Image.new("RGBA", (500, 250), (30, 30, 30, 255))
     draw = ImageDraw.Draw(base)
     font = ImageFont.truetype("arial.ttf", 24)
@@ -45,12 +55,9 @@ async def on_member_join(member):
     draw.text((180, 80), f"Welcome {member.name}!", font=font, fill=(255, 255, 255))
     draw.text((180, 120), "to TN Clan Master!", font=font, fill=(200, 200, 255))
 
-    # Save to buffer
     buffer = BytesIO()
     base.save(buffer, format="PNG")
     buffer.seek(0)
 
-    # Send to Discord
     file = discord.File(fp=buffer, filename="welcome.png")
     await channel.send(f"Welcome {member.mention} to **TN Clan Master**!", file=file)
-
